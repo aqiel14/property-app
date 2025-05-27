@@ -14,13 +14,34 @@ export default function PropertyDetails({ property, onClose }) {
     const confirmed = confirm("Are you sure you want to delete this property?");
     if (!confirmed) return;
 
-    const { error } = await supabase
-      .from("properties")
-      .delete()
-      .eq("id", propertyId);
+    try {
+      // Get token from Supabase client (or your auth provider)
+      const token = await supabase.auth
+        .getSession()
+        .then((res) => res.data.session?.access_token);
 
-    if (error) {
-      alert("Failed to delete property: " + error.message);
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/properties/${propertyId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        alert(
+          "Failed to delete property: " + (errorData.error || res.statusText)
+        );
+        return;
+      }
+
+      alert("Property deleted successfully");
+      onClose(); // close details panel or refresh parent list as needed
+    } catch (err) {
+      alert("Failed to delete property: " + err.message);
     }
   };
 

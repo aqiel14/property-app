@@ -8,7 +8,6 @@ import {
   OverlayView,
 } from "@react-google-maps/api";
 import { useEffect, useRef, useState } from "react";
-import { supabase } from "@/lib/supabase";
 import { Badge } from "@/components/ui/badge";
 
 const containerStyle = {
@@ -28,17 +27,36 @@ export default function PropertyMap({ center, zoom, setActiveProperty }) {
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
   });
 
+  //   useEffect(() => {
+  //     async function fetchProperties() {
+  //       const { data, error } = await supabase.from("properties").select("*");
+  //       if (!error) {
+  //         setProperties(data);
+  //       }
+  //       setLoading(false);
+  //     }
+
+  //     fetchProperties();
+  //   }, []);
+
   useEffect(() => {
     async function fetchProperties() {
-      const { data, error } = await supabase.from("properties").select("*");
-      if (!error) {
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/properties`
+        );
+        const data = await res.json();
         setProperties(data);
+      } catch (err) {
+        console.error("Failed to fetch properties:", err);
       }
       setLoading(false);
     }
 
     fetchProperties();
   }, []);
+
+  console.log("properties", properties);
 
   useEffect(() => {
     if (mapRef.current && center) {

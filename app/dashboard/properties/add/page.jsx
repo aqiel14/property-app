@@ -29,6 +29,57 @@ export default function AddPropertyPage() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  //   const handleSubmit = async (e) => {
+  //     e.preventDefault();
+
+  //     if (!user) {
+  //       setMessage("You must be logged in to add a property.");
+  //       return;
+  //     }
+
+  //     let imageUrl = "";
+
+  //     if (imageFile) {
+  //       const fileExt = imageFile.name.split(".").pop();
+  //       const fileName = `${Date.now()}.${fileExt}`;
+  //       const filePath = `public/${fileName}`;
+
+  //       const { error: uploadError } = await supabase.storage
+  //         .from("property-images")
+  //         .upload(filePath, imageFile);
+
+  //       if (uploadError) {
+  //         setMessage("Failed to upload image: " + uploadError.message);
+  //         return;
+  //       }
+
+  //       const { data: publicUrlData } = supabase.storage
+  //         .from("property-images")
+  //         .getPublicUrl(filePath);
+
+  //       imageUrl = publicUrlData?.publicUrl || "";
+  //     }
+
+  //     const newProperty = {
+  //       user_id: user.id,
+  //       title: form.title,
+  //       price: form.price ? parseInt(form.price) : null,
+  //       image_url: imageUrl,
+  //       lat: form.lat ? parseFloat(form.lat) : null,
+  //       lng: form.lng ? parseFloat(form.lng) : null,
+  //     };
+
+  //     const { error } = await supabase.from("properties").insert([newProperty]);
+
+  //     if (error) {
+  //       setMessage("Error inserting property: " + error.message);
+  //     } else {
+  //       setMessage("Property added successfully!");
+  //       setForm({ title: "", price: "", lat: "", lng: "" });
+  //       router.push("/dashboard"); // Redirect to properties list
+  //     }
+  //   };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -37,46 +88,39 @@ export default function AddPropertyPage() {
       return;
     }
 
-    let imageUrl = "";
+    const formData = new FormData();
+    formData.append("title", form.title);
+    formData.append("price", form.price);
+    formData.append("lat", form.lat);
+    formData.append("lng", form.lng);
+    if (imageFile) formData.append("image", imageFile);
 
-    if (imageFile) {
-      const fileExt = imageFile.name.split(".").pop();
-      const fileName = `${Date.now()}.${fileExt}`;
-      const filePath = `public/${fileName}`;
+    // Send JWT token in Authorization header
+    const token = await supabase.auth
+      .getSession()
+      .then((res) => res.data.session?.access_token);
 
-      const { error: uploadError } = await supabase.storage
-        .from("property-images")
-        .upload(filePath, imageFile);
-
-      if (uploadError) {
-        setMessage("Failed to upload image: " + uploadError.message);
-        return;
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/properties`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
       }
+    );
 
-      const { data: publicUrlData } = supabase.storage
-        .from("property-images")
-        .getPublicUrl(filePath);
+    const data = await res.json();
 
-      imageUrl = publicUrlData?.publicUrl || "";
-    }
+    console.log("data", data);
 
-    const newProperty = {
-      user_id: user.id,
-      title: form.title,
-      price: form.price ? parseInt(form.price) : null,
-      image_url: imageUrl,
-      lat: form.lat ? parseFloat(form.lat) : null,
-      lng: form.lng ? parseFloat(form.lng) : null,
-    };
-
-    const { error } = await supabase.from("properties").insert([newProperty]);
-
-    if (error) {
-      setMessage("Error inserting property: " + error.message);
+    if (!res.ok) {
+      setMessage(data.error || "Failed to add property");
     } else {
       setMessage("Property added successfully!");
       setForm({ title: "", price: "", lat: "", lng: "" });
-      router.push("/dashboard"); // Redirect to properties list
+      router.push("/dashboard");
     }
   };
 

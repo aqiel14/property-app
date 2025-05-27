@@ -1,13 +1,12 @@
 "use client";
 
+import { supabase } from "@/lib/supabase";
 import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
 
 export default function EditPropertyPage() {
   const router = useRouter();
   const { id } = useParams();
-  const [property, setProperty] = useState(null);
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     title: "",
@@ -18,49 +17,78 @@ export default function EditPropertyPage() {
 
   useEffect(() => {
     async function fetchProperty() {
-      const { data, error } = await supabase
-        .from("properties")
-        .select("*")
-        .eq("id", id)
-        .single();
+      const token = await supabase.auth
+        .getSession()
+        .then((res) => res.data.session?.access_token);
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/properties/${id}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
-      if (error) {
-        setError("Property not found.");
-        return;
+        if (!res.ok) {
+          throw new Error(`Failed to fetch property: ${res.statusText}`);
+        }
+
+        const data = await res.json();
+
+        setFormData({
+          title: data.title || "",
+          price: data.price?.toString() || "",
+          image_url: data.image_url || "",
+        });
+        setLoading(false);
+      } catch (err) {
+        setError(err.message);
+        setLoading(false);
       }
-
-      setProperty(data);
-      setFormData({
-        title: data.title || "",
-        price: data.price || "",
-        image_url: data.image_url || "",
-      });
-      setLoading(false);
     }
 
     if (id) fetchProperty();
   }, [id]);
 
   const handleChange = (e) => {
+    setError(null);
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError(null);
+    const token = await supabase.auth
+      .getSession()
+      .then((res) => res.data.session?.access_token);
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/properties/${id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            title: formData.title,
+            price: parseInt(formData.price),
+            // image_url: formData.image_url, // if you want to allow updating image URL here
+          }),
+        }
+      );
 
-    const { error } = await supabase
-      .from("properties")
-      .update({
-        title: formData.title,
-        price: formData.price,
-        image_url: formData.image_url,
-      })
-      .eq("id", id);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to update property");
+      }
 
-    if (error) {
-      setError(error.message);
-    } else {
       router.push("/dashboard");
+    } catch (err) {
+      setError(err.message);
     }
   };
 
@@ -93,17 +121,6 @@ export default function EditPropertyPage() {
             onChange={handleChange}
             className="w-full p-2 border rounded"
             required
-          />
-        </div>
-
-        <div>
-          <label className="block mb-1">Image URL</label>
-          <input
-            type="text"
-            name="image_url"
-            value={formData.image_url}
-            onChange={handleChange}
-            className="w-full p-2 border rounded"
           />
         </div>
 
