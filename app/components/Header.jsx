@@ -1,0 +1,43 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
+import { useState, useEffect } from "react";
+
+export default function Header() {
+  const router = useRouter();
+  const [userEmail, setUserEmail] = useState(null);
+
+  useEffect(() => {
+    async function fetchUser() {
+      const { data } = await supabase.auth.getUser();
+      if (data?.user) setUserEmail(data.user.email);
+    }
+    fetchUser();
+  }, []);
+
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    router.push("/auth/login");
+  }
+
+  return (
+    <header className="flex justify-between items-center bg-gray-800 text-white px-6 py-4">
+      <h1
+        className="text-xl font-bold cursor-pointer"
+        onClick={() => router.push("/dashboard")}
+      >
+        Dashboard
+      </h1>
+      <div className="flex items-center space-x-4">
+        {userEmail && <span>Welcome, {userEmail}</span>}
+        <button
+          onClick={handleLogout}
+          className="bg-red-600 px-3 py-1 rounded hover:bg-red-700"
+        >
+          Logout
+        </button>
+      </div>
+    </header>
+  );
+}

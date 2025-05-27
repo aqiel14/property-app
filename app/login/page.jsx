@@ -1,0 +1,28 @@
+"use client";
+import { GalleryVerticalEnd } from "lucide-react";
+
+import { LoginForm } from "@/components/login-form";
+import { useState } from "react";
+import { supabase } from "@/lib/supabase";
+
+export default function LoginPage() {
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
+
+  const handleLogin = async () => {
+    const { error } = await supabase.auth.signInWithOtp({ email });
+    if (error) setMessage(error.message);
+    else setMessage("Check your email for the magic link.");
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center px-4">
+      <LoginForm
+        email={email}
+        setEmail={setEmail}
+        handleLogin={handleLogin}
+        message={message}
+      />
+    </div>
+  );
+}
