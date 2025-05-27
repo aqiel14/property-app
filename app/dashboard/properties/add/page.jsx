@@ -20,7 +20,7 @@ export default function AddPropertyPage() {
     async function fetchUser() {
       const { data } = await supabase.auth.getUser();
       if (data?.user) setUser(data.user);
-      else router.push("/auth/login"); // redirect if not logged in
+      else router.push("/login"); // redirect if not logged in
     }
     fetchUser();
   }, [router]);
