@@ -1,25 +1,48 @@
 "use client";
 
-import { supabase } from "@/lib/supabase";
-import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useRouter, useParams } from "next/navigation";
+import { supabase } from "@/lib/supabase";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+
+const formSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  price: z.string().min(1, "Price is required"),
+});
 
 export default function EditPropertyPage() {
   const router = useRouter();
   const { id } = useParams();
   const [loading, setLoading] = useState(true);
-  const [formData, setFormData] = useState({
-    title: "",
-    price: "",
-    image_url: "",
-  });
   const [error, setError] = useState(null);
+
+  const form = useForm({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      title: "",
+      price: "",
+    },
+  });
 
   useEffect(() => {
     async function fetchProperty() {
       const token = await supabase.auth
         .getSession()
         .then((res) => res.data.session?.access_token);
+
       try {
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/properties/${id}`,
@@ -38,11 +61,11 @@ export default function EditPropertyPage() {
 
         const data = await res.json();
 
-        setFormData({
+        form.reset({
           title: data.title || "",
           price: data.price?.toString() || "",
-          image_url: data.image_url || "",
         });
+
         setLoading(false);
       } catch (err) {
         setError(err.message);
@@ -53,17 +76,13 @@ export default function EditPropertyPage() {
     if (id) fetchProperty();
   }, [id]);
 
-  const handleChange = (e) => {
+  const onSubmit = async (values) => {
     setError(null);
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-  };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError(null);
     const token = await supabase.auth
       .getSession()
       .then((res) => res.data.session?.access_token);
+
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/properties/${id}`,
@@ -74,9 +93,8 @@ export default function EditPropertyPage() {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            title: formData.title,
-            price: parseInt(formData.price),
-            // image_url: formData.image_url, // if you want to allow updating image URL here
+            title: values.title,
+            price: parseInt(values.price),
           }),
         }
       );
@@ -99,47 +117,52 @@ export default function EditPropertyPage() {
     <div className="max-w-2xl mx-auto p-6">
       <h1 className="text-xl font-semibold mb-4">Edit Property</h1>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block mb-1">Title</label>
-          <input
-            type="text"
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
             name="title"
-            value={formData.title}
-            onChange={handleChange}
-            className="w-full p-2 border rounded"
-            required
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Title</FormLabel>
+                <FormControl>
+                  <Input placeholder="Property title" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-        </div>
 
-        <div>
-          <label className="block mb-1">Price</label>
-          <input
-            type="number"
+          <FormField
+            control={form.control}
             name="price"
-            value={formData.price}
-            onChange={handleChange}
-            className="w-full p-2 border rounded"
-            required
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Price</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    placeholder="Property price"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-        </div>
 
-        <div className="flex gap-2">
-          <button
-            type="submit"
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          >
-            Save Changes
-          </button>
-          <button
-            type="button"
-            onClick={() => router.push("/dashboard")}
-            className="border border-gray-400 px-4 py-2 rounded"
-          >
-            Cancel
-          </button>
-        </div>
-      </form>
+          <div className="flex gap-2">
+            <Button type="submit">Save Changes</Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.push("/dashboard")}
+            >
+              Cancel
+            </Button>
+          </div>
+        </form>
+      </Form>
     </div>
   );
 }

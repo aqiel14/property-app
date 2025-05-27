@@ -15,10 +15,12 @@ const containerStyle = {
   height: "950px",
 };
 
-export default function PropertyMap({ center, zoom, setActiveProperty }) {
-  const [properties, setProperties] = useState([]);
-  const [loading, setLoading] = useState(true);
-
+export default function PropertyMap({
+  properties,
+  center,
+  zoom,
+  setActiveProperty,
+}) {
   const [hoveredId, setHoveredId] = useState(null);
 
   const mapRef = useRef(null);
@@ -27,37 +29,6 @@ export default function PropertyMap({ center, zoom, setActiveProperty }) {
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
   });
 
-  //   useEffect(() => {
-  //     async function fetchProperties() {
-  //       const { data, error } = await supabase.from("properties").select("*");
-  //       if (!error) {
-  //         setProperties(data);
-  //       }
-  //       setLoading(false);
-  //     }
-
-  //     fetchProperties();
-  //   }, []);
-
-  useEffect(() => {
-    async function fetchProperties() {
-      try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/properties`
-        );
-        const data = await res.json();
-        setProperties(data);
-      } catch (err) {
-        console.error("Failed to fetch properties:", err);
-      }
-      setLoading(false);
-    }
-
-    fetchProperties();
-  }, []);
-
-  console.log("properties", properties);
-
   useEffect(() => {
     if (mapRef.current && center) {
       mapRef.current.panTo(center);
@@ -65,7 +36,7 @@ export default function PropertyMap({ center, zoom, setActiveProperty }) {
     }
   }, [center, zoom]);
 
-  if (!isLoaded || loading) return <p className="p-4">Loading map...</p>;
+  if (!isLoaded) return <p className="p-4">Loading map...</p>;
 
   return (
     <GoogleMap

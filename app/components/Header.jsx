@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
 
 export default function Header() {
   const router = useRouter();
@@ -22,7 +23,7 @@ export default function Header() {
   }
 
   return (
-    <header className="flex justify-between items-center bg-gray-800 text-white px-6 py-4">
+    <header className="flex justify-between items-center bg-gray-800 text-white px-6 py-4 z-20">
       <h1
         className="text-xl font-bold cursor-pointer"
         onClick={() => router.push("/dashboard")}
@@ -31,12 +32,12 @@ export default function Header() {
       </h1>
       <div className="flex items-center space-x-4">
         {userEmail && <span>Welcome, {userEmail}</span>}
-        <button
+        <Button
           onClick={handleLogout}
-          className="bg-red-600 px-3 py-1 rounded hover:bg-red-700"
+          className="bg-red-600 p-4 rounded hover:bg-red-700"
         >
           Logout
-        </button>
+        </Button>
       </div>
     </header>
   );

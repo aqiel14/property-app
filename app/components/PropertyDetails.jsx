@@ -3,6 +3,7 @@
 
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
+import { XIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { Router } from "next/router";
@@ -55,7 +56,7 @@ export default function PropertyDetails({ property, onClose }) {
           onClick={onClose}
           className="text-gray-500 hover:text-black font-semibold"
         >
-          ×
+          <XIcon />
         </Button>
       </div>
       {property.image_url && (
