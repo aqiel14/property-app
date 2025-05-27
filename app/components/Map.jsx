@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 
 const containerStyle = {
   width: "100%",
-  height: "950px",
+  height: "100%",
 };
 
 export default function PropertyMap({
